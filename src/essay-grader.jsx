@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import logoImg from './assets/logo.svg';
 
 // ── i18n ──
 const i18n = {
@@ -334,11 +335,11 @@ ${essay}
         padding: "16px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 100
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ 
-            width: 44, height: 44, borderRadius: 14, background: MAIN_GRADIENT, 
-            boxShadow: "0 8px 24px rgba(255, 107, 107, 0.4)", display: "flex", alignItems: "center", justifyContent: "center", 
-            color: "#fff", fontWeight: 700, fontSize: 20, fontFamily: "'Instrument Serif', serif"
-          }}>M</div>
+          <img 
+            src={logoImg} 
+            alt="Madlen Logo" 
+            style={{ width: 46, height: 46, borderRadius: 14, objectFit: "cover", boxShadow: "0 6px 16px rgba(211, 140, 63, 0.25)" }} 
+          />
           <div>
             <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 28, fontWeight: 400, color: "#1F2937" }}>{t.title}</span>
             <span style={{ fontSize: 11, fontWeight: 800, color: "#FF6B6B", marginLeft: 12, letterSpacing: "0.1em", textTransform: "uppercase", background: "rgba(255, 107, 107, 0.1)", padding: "4px 10px", borderRadius: 99 }}>{t.subtitle}</span>
