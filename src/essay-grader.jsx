@@ -344,11 +344,18 @@ ${essay}
             <span style={{ fontSize: 11, fontWeight: 800, color: "#FF6B6B", marginLeft: 12, letterSpacing: "0.1em", textTransform: "uppercase", background: "rgba(255, 107, 107, 0.1)", padding: "4px 10px", borderRadius: 99 }}>{t.subtitle}</span>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <button onClick={() => setShowSettings(true)} style={{ background: "transparent", border: "none", fontSize: 20, cursor: "pointer", opacity: 0.6, marginRight: 8, transition: "opacity 0.2s" }} title="API Settings">⚙️</button>
-          <button className="glass-btn" onClick={() => setLang(lang === "en" ? "tr" : "en")} style={{ padding: "10px 20px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{lang === "en" ? "EN" : "TR"}</button>
-          <button className="glass-btn" onClick={() => {setEssay(lang === "en" ? SAMPLE_EN : SAMPLE_TR); setResults(null); setErrorText(null);}} style={{ padding: "10px 24px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{t.loadSample}</button>
-          <button className="glass-btn" onClick={() => {setEssay(""); setResults(null); setErrorText(null);}} style={{ padding: "10px 24px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{t.clear}</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          {/* Demo/Mock Utilities */}
+          <div style={{ display: "flex", gap: 12, alignItems: "center", paddingRight: 24, borderRight: "1px solid rgba(0,0,0,0.08)" }}>
+            <button onClick={() => setShowSettings(true)} style={{ background: "transparent", border: "none", fontSize: 20, cursor: "pointer", opacity: 0.6, transition: "opacity 0.2s" }} title="API Settings">⚙️</button>
+            <button className="glass-btn" onClick={() => {setEssay(lang === "en" ? SAMPLE_EN : SAMPLE_TR); setResults(null); setErrorText(null);}} style={{ padding: "10px 24px", borderRadius: 99, border: "1px dashed rgba(0,0,0,0.15)", background: "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: 600, color: "#6B7280", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{t.loadSample}</button>
+          </div>
+
+          {/* Core Product Utilities */}
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <button className="glass-btn" onClick={() => setLang(lang === "en" ? "tr" : "en")} style={{ padding: "10px 20px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{lang === "en" ? "EN" : "TR"}</button>
+            <button className="glass-btn" onClick={() => {setEssay(""); setResults(null); setErrorText(null);}} style={{ padding: "10px 24px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{t.clear}</button>
+          </div>
         </div>
       </div>
 
