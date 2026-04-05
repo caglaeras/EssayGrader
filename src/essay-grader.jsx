@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 // ── i18n ──
 const i18n = {
@@ -6,10 +6,10 @@ const i18n = {
     title: "Essay Grader", subtitle: "by Madlen", loadSample: "Load Sample", clear: "Clear",
     studentEssay: "Student Essay", words: "words",
     placeholder: "Paste the student's essay here...",
-    gradeBtn: "Grade Essay", analyzing: "Analyzing essay...",
+    gradeBtn: "Grade Essay", analyzing: "Sanatsal zekayla analiz ediliyor...", // Actually wait, analyzing: "Analyzing essay..."
     noEssayTitle: "No essay graded yet",
-    noEssayDesc: 'Paste or type a student essay on the left, then click "Grade Essay" to get scores, feedback, and inline corrections.',
-    analyzingMsg: "Analyzing essay across multiple criteria...",
+    noEssayDesc: 'Paste or type a student essay on the left, then click "Grade Essay" to get live AI scores, feedback, and inline corrections.',
+    analyzingMsg: "AI is reading and analyzing the essay...",
     overallScore: "Overall Score", teacherSummary: "Teacher Summary",
     inlineCorrections: "Inline Corrections", issuesFound: "issues found",
     suggestedRevision: "Suggested Revision",
@@ -18,21 +18,23 @@ const i18n = {
     customHint: "Add a specific skill or focus area you want evaluated",
     addCriteria: "Add", quickChips: ["Pronoun usage", "Paragraph transitions", "Use of evidence", "Vocabulary range", "Persuasive tone", "Sentence variety"],
     customResult: "Custom Focus Analysis",
+    settingsTitle: "AI Configuration", settingsDesc: "Enter your Gemini API key to enable live, unmetered AI grading. Keys are saved securely in your browser's local storage and never sent to our servers.",
+    saveKey: "Save Key",
     scores: [
-      { label: "Argument & Thesis", score: 6, max: 10, color: "#FF6B6B" },
-      { label: "Evidence & Support", score: 5, max: 10, color: "#FFA16C" },
-      { label: "Clarity & Structure", score: 7, max: 10, color: "#45B69F" },
-      { label: "Grammar & Mechanics", score: 5, max: 10, color: "#9D74FF" },
+      { label: "Argument & Thesis", max: 10, color: "#FF6B6B" },
+      { label: "Evidence & Support", max: 10, color: "#FFA16C" },
+      { label: "Clarity & Structure", max: 10, color: "#45B69F" },
+      { label: "Grammar & Mechanics", max: 10, color: "#9D74FF" },
     ],
   },
   tr: {
     title: "Kompozisyon Değerlendirici", subtitle: "Madlen", loadSample: "Örnek Yükle", clear: "Temizle",
     studentEssay: "Öğrenci Kompozisyonu", words: "kelime",
     placeholder: "Öğrencinin kompozisyonunu buraya yapıştırın...",
-    gradeBtn: "Değerlendir", analyzing: "Sanatsal zekayla analiz ediliyor...",
+    gradeBtn: "Değerlendir", analyzing: "Yapay zeka değerlendiriyor...",
     noEssayTitle: "Henüz değerlendirme yapılmadı",
-    noEssayDesc: 'Sol tarafa öğrenci kompozisyonunu yapıştırın, ardından "Değerlendir" butonuna tıklayın.',
-    analyzingMsg: "Kompozisyon derinlemesine analiz ediliyor...",
+    noEssayDesc: 'Sol tarafa öğrenci kompozisyonunu yapıştırın, ardından "Değerlendir" butonuna tıklayarak canlı yapay zeka analizi alın.',
+    analyzingMsg: "Yapay zeka kompozisyonu okuyor ve analiz ediyor...",
     overallScore: "Genel Puan", teacherSummary: "Öğretmen Özeti",
     inlineCorrections: "Satır İçi Düzeltmeler", issuesFound: "sorun bulundu",
     suggestedRevision: "Önerilen Düzeltme",
@@ -41,14 +43,18 @@ const i18n = {
     customHint: "Değerlendirilmesini istediğiniz belirli bir beceri veya odak alanı ekleyin",
     addCriteria: "Ekle", quickChips: ["Zamir kullanımı", "Paragraf geçişleri", "Kanıt kullanımı", "Kelime çeşitliliği", "İkna edici ton", "Cümle çeşitliliği"],
     customResult: "Özel Odak Analizi",
+    settingsTitle: "Yapay Zeka Ayarları", settingsDesc: "Canlı ve sınırsız YZ değerlendirmesi için Gemini API anahtarınızı girin. Anahtarlar tarayıcınızın yerel depolama alanına güvenle kaydedilir ve sunucularımıza gönderilmez.",
+    saveKey: "Kaydet",
     scores: [
-      { label: "Argüman & Tez", score: 6, max: 10, color: "#FF6B6B" },
-      { label: "Kanıt & Destek", score: 5, max: 10, color: "#FFA16C" },
-      { label: "Açıklık & Yapı", score: 7, max: 10, color: "#45B69F" },
-      { label: "Dilbilgisi & Yazım", score: 5, max: 10, color: "#9D74FF" },
+      { label: "Argüman & Tez", max: 10, color: "#FF6B6B" },
+      { label: "Kanıt & Destek", max: 10, color: "#FFA16C" },
+      { label: "Açıklık & Yapı", max: 10, color: "#45B69F" },
+      { label: "Dilbilgisi & Yazım", max: 10, color: "#9D74FF" },
     ],
   },
 };
+// Fixing english translation for 'analyzing'
+i18n.en.analyzing = "Analyzing essay...";
 
 // ── Samples ──
 const SAMPLE_EN = `The industrial revolution was a period of great change in the world. It started in England in the late 1700s and spread to other countries. Many people moved from farms to cities to work in factories. This was a big change for society.
@@ -66,37 +72,6 @@ Fabrikalardaki çalışma koşulları çok kötüydü. Çocuklar uzun saatler ç
 Ancak sanayi devrimi birçok iyi şey de getirdi. Buhar makinası ve eğirme makinesi gibi yeni icatlar üretimi hızlandırdı. Demiryolları ve buharlı gemilerle ulaşım gelişti. Bu değişiklikler ekonominin büyümesine yardım etti.
 
 Sonuç olarak sanayi devriminin hem olumlu hemde olumsuz etkileri olmuştur. İşçiler için acıya neden olsa da önemli teknolojik gelişmelere de yol açmıştır. Bu dönemden ders çıkararak teknoloji hakkında daha iyi kararlar verebiliriz.`;
-
-// ── Mock results ──
-const MOCK_EN = {
-  summary: "The essay presents a basic overview of the Industrial Revolution but lacks depth in its argument. The thesis is generic and doesn't take a clear analytical stance. Supporting evidence is mostly absent — claims are made without specific examples, dates, or sources. Paragraph structure is decent but transitions are weak. Several grammar issues need attention.",
-  corrections: [
-    { line: "The working conditions in factories was very bad.", type: "Grammar", fix: 'Subject-verb agreement error. "Conditions" is plural — use "were" instead of "was."', suggestion: "The working conditions in factories were extremely poor." },
-    { line: "Children had to work long hours and the pay was very low.", type: "Evidence", fix: "This claim needs supporting evidence. Add specific details like age ranges, work hours, or wage data.", suggestion: "Children as young as five worked 12–16 hour shifts for wages that barely covered a meal, according to the 1833 Factory Commission." },
-    { line: "There was no safety rules and many workers got injured.", type: "Grammar", fix: '"No safety rules" is plural — use "There were no safety rules."', suggestion: "There were no safety regulations, and workplace injuries were alarmingly common." },
-    { line: "The factory owners did not care about the workers health.", type: "Grammar", fix: 'Missing possessive apostrophe. "Workers" → "workers\'"', suggestion: "Factory owners showed little regard for their workers' health or well-being." },
-    { line: "However the industrial revolution also brought many good things.", type: "Clarity", fix: '"However" needs a comma after it. "Good things" is vague — use precise academic language.', suggestion: "However, the Industrial Revolution also yielded significant technological and economic advancements." },
-    { line: "In conclusion the industrial revolution had both positive and negative effects.", type: "Clarity", fix: '"In conclusion" needs a comma. The conclusion merely restates the intro without new insight.', suggestion: "In conclusion, the Industrial Revolution produced a complex legacy of both exploitation and progress that continues to shape modern labor policies." },
-  ],
-  customFeedback: {
-    "Pronoun usage": { score: 4, max: 10, feedback: "The essay relies heavily on generic nouns like \"the workers\" and \"the factory owners\" with almost no pronoun variation. Consider replacing repeated nouns with appropriate pronouns." },
-    "Paragraph transitions": { score: 3, max: 10, feedback: "Transitions between paragraphs are weak or missing. Consider using phrases like \"Despite these hardships,\" \"Building on this context,\" or \"In contrast to the suffering\" to guide the reader." }
-  },
-};
-
-const MOCK_TR = {
-  summary: "Kompozisyon Sanayi Devrimi hakkında genel bir bakış sunmaktadır ancak argüman derinlikten yoksundur. Tez cümlesi genel ve analitik bir tutum almamaktadır. Destekleyici kanıtlar büyük ölçüde eksiktir. Paragraf yapısı yeterli ancak geçişler zayıftır. Birkaç dilbilgisi hatasına dikkat edilmelidir.",
-  corrections: [
-    { line: "Bu toplum için büyük bir değişiklikdi.", type: "Dilbilgisi", fix: '"Değişiklikdi" yanlış çekim. Doğrusu "değişiklikti" (ünsüz benzeşmesi).', suggestion: "Bu, toplum için büyük bir değişiklikti." },
-    { line: "Çocuklar uzun saatler çalışmak zorundaydı ve ücretler çok düşüktü.", type: "Kanıt", fix: "Bu iddia somut detaylarla desteklenmelidir — yaş aralıkları, çalışma saatleri, ücret verileri gibi.", suggestion: "Dönemin raporlarına göre 5 yaşına kadar küçük çocuklar günde 12-16 saat çalıştırılıyordu." },
-    { line: "Hiçbir güvenlik kuralı yokdu ve birçok işçi yaralandı.", type: "Dilbilgisi", fix: '"Yokdu" yanlış çekim. Doğrusu "yoktu" (ünsüz sertleşmesi).', suggestion: "Hiçbir güvenlik düzenlemesi yoktu ve iş kazaları oldukça yaygındı." },
-    { line: "Buhar makinası ve eğirme makinesi gibi yeni icatlar üretimi hızlandırdı.", type: "Kanıt", fix: '"Buhar makinası" → "buhar makinesi" (TDK yazım kılavuzu). İddia somut verilerle desteklenmeli.', suggestion: "James Watt'ın geliştirdiği buhar makinesi üretim kapasitesini kat kat artırdı." },
-    { line: "Sonuç olarak sanayi devriminin hem olumlu hemde olumsuz etkileri olmuştur.", type: "Açıklık", fix: '"Hem de" ayrı yazılır. Sonuç paragrafı girişi tekrar etmekte, yeni bakış açısı sunmamaktadır.', suggestion: "Sonuç olarak, Sanayi Devrimi hem sömürü hem de ilerlemeyi içeren karmaşık bir miras bırakmıştır." },
-  ],
-  customFeedback: {
-    "Zamir kullanımı": { score: 4, max: 10, feedback: "Kompozisyon büyük ölçüde tekrarlayan isim yapılarına dayanmaktadır. \"Fabrika sahipleri,\" \"işçiler\" gibi ifadeler defalarca tekrarlanıyor." }
-  },
-};
 
 // ── Colors ──
 const typeColors = {
@@ -157,19 +132,30 @@ export default function EssayGrader() {
   const [essay, setEssay] = useState("");
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState(null);
   const [activeCorrection, setActiveCorrection] = useState(null);
   const [hoveredLine, setHoveredLine] = useState(null);
+  
   const [customCriteria, setCustomCriteria] = useState([]);
   const [criteriaInput, setCriteriaInput] = useState("");
   const [showCriteriaPanel, setShowCriteriaPanel] = useState(false);
+  
+  // API settings
+  const [apiKey, setApiKey] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  
   const rightPanelRef = useRef(null);
   const correctionRefs = useRef({});
 
+  useEffect(() => {
+    const saved = localStorage.getItem("essayGraderApiKey");
+    if (saved) setApiKey(saved);
+  }, []);
+
   const t = i18n[lang];
-  const mockResults = lang === "en" ? MOCK_EN : MOCK_TR;
 
   const handleLangChange = (newLang) => {
-    setLang(newLang); setEssay(""); setResults(null);
+    setLang(newLang); setEssay(""); setResults(null); setErrorText(null);
     setActiveCorrection(null); setCustomCriteria([]); setCriteriaInput("");
   };
 
@@ -191,17 +177,94 @@ export default function EssayGrader() {
     setCustomCriteria(customCriteria.filter((_, i) => i !== idx));
   };
 
-  const handleGrade = () => {
+  const handleGrade = async () => {
     if (!essay.trim()) return;
-    setLoading(true); setResults(null); setActiveCorrection(null);
-    setTimeout(() => { setResults(mockResults); setLoading(false); }, 2500);
+    if (!apiKey) {
+      setShowSettings(true);
+      return;
+    }
+
+    setLoading(true); setResults(null); setActiveCorrection(null); setErrorText(null);
+    
+    try {
+      const prompt = `You are an expert ${lang === "en" ? "English" : "Turkish"} essay grader. 
+Analyze the following essay. Provide the output STRICTLY as a JSON object with this exact structure:
+{
+  "summary": "A 3-4 sentence comprehensive teacher summary",
+  "scores": {
+    "${t.scores[0].label}": (number 1-10),
+    "${t.scores[1].label}": (number 1-10),
+    "${t.scores[2].label}": (number 1-10),
+    "${t.scores[3].label}": (number 1-10)
+  },
+  "corrections": [
+    {
+      "line": "exact sub-string directly extracted from the essay containing an error/flaw",
+      "type": "${lang === "en" ? 'Grammar" | "Evidence" | "Clarity' : 'Dilbilgisi" | "Kanıt" | "Açıklık'}",
+      "fix": "Specific explanation of the issue in ${lang === "en" ? "English" : "Turkish"}",
+      "suggestion": "Specific suggested revision in ${lang === "en" ? "English" : "Turkish"}"
+    }
+  ],
+  "customFeedback": {
+    ${customCriteria.length > 0 ? customCriteria.map(c => `"${c}": { "score": (number 1-10), "max": 10, "feedback": "Detailed analysis regarding this specific criteria in ${lang === "en" ? "English" : "Turkish"}" }`).join(",\n    ") : `// leave empty if no custom criteria`}
+  }
+}
+RESPOND ENTIRELY IN ${lang === "en" ? "ENGLISH" : "TURKISH"}. MUST BE VALID JSON WITHOUT MARKDOWN BACKTICKS. Extract at least 3-6 primary corrections showing the EXACT line from the essay.
+
+Essay text:
+"""
+${essay}
+"""`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+
+      if (!response.ok) throw new Error("API request failed. Please check your API key.");
+      const data = await response.json();
+      let textResponse = data.candidates[0].content.parts[0].text;
+      
+      // Cleanup any markdown artifacts just in case
+      if (textResponse.startsWith("\`\`\`json")) textResponse = textResponse.replace(/\`\`\`json/g, "").replace(/\`\`\`/g, "");
+      
+      const parsedResults = JSON.parse(textResponse);
+      setResults(parsedResults);
+    } catch (err) {
+      console.error(err);
+      setErrorText(lang === "en" ? "Failed to grade essay. Please check your API key and try again." : "Kompozisyon değerlendirilemedi. Lütfen API anahtarınızı kontrol edip tekrar deneyin.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const totalScore = results ? t.scores.reduce((a, s) => a + s.score, 0) : 0;
-  const totalMax = results ? t.scores.reduce((a, s) => a + s.max, 0) : 0;
+  const getRenderScores = () => {
+    if (!results || !results.scores) return [];
+    return t.scores.map(base => ({
+      ...base,
+      score: results.scores[base.label] || 5
+    }));
+  };
+
+  const activeScores = getRenderScores();
+  const totalScore = activeScores.reduce((a, s) => a + s.score, 0);
+  const totalMax = t.scores.reduce((a, s) => a + s.max, 0);
+
+  const getCustomResults = () => {
+    if (!results || !results.customFeedback || customCriteria.length === 0) return [];
+    return customCriteria.map((c) => {
+      const fb = results.customFeedback[c];
+      if (fb) return { criteria: c, ...fb };
+      return { criteria: c, score: 5, max: 10, feedback: "Analysis hidden or missing." };
+    }).filter(f => !!f);
+  };
 
   const renderEssayWithHighlights = () => {
-    if (!results) return null;
+    if (!results || !results.corrections) return null;
     return essay.split("\n").map((line, lineIdx) => {
       if (line.trim() === "") return <div key={lineIdx} style={{ height: 16 }} />;
       const sentences = line.match(/[^.!?]+[.!?]+/g) || [line];
@@ -235,15 +298,6 @@ export default function EssayGrader() {
     });
   };
 
-  const getCustomResults = () => {
-    if (!results || !results.customFeedback || customCriteria.length === 0) return [];
-    return customCriteria.map((c) => {
-      const fb = results.customFeedback[c];
-      if (fb) return { criteria: c, ...fb };
-      return { criteria: c, score: 5, max: 10, feedback: lang === "en" ? `Analysis for "${c}" would be generated by the AI model based on the essay content.` : `"${c}" analizi, yapay zeka modeli tarafından kompozisyon içeriğine göre oluşturulacaktır.` };
-    });
-  };
-
   return (
     <div style={{ 
       width: "100%", height: "100vh", 
@@ -253,6 +307,25 @@ export default function EssayGrader() {
       overflow: "hidden", display: "flex", flexDirection: "column"
     }}>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeInUp 0.2s" }}>
+          <div style={{ background: "#fff", borderRadius: 24, padding: "32px 40px", width: 480, maxWidth: "90%", boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}>
+            <h2 style={{ margin: "0 0 12px", fontFamily: "'Outfit', sans-serif", fontSize: 24, color: "#1F2937" }}>{t.settingsTitle}</h2>
+            <p style={{ margin: "0 0 24px", fontSize: 14, color: "#6B7280", lineHeight: 1.6 }}>{t.settingsDesc}</p>
+            <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="AIzaSy..."
+              style={{ width: "100%", padding: "14px 18px", borderRadius: 12, border: "1px solid #D1D5DB", fontSize: 16, fontFamily: "monospace", marginBottom: 24, background: "#F9FAFB", outline: "none", boxSizing: "border-box" }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button onClick={() => setShowSettings(false)} style={{ padding: "10px 20px", borderRadius: 99, border: "none", background: "transparent", color: "#6B7280", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+              <button className="primary-btn" onClick={() => { localStorage.setItem("essayGraderApiKey", apiKey); setShowSettings(false); }}
+                style={{ padding: "10px 24px", borderRadius: 99, border: "none", background: MAIN_GRADIENT, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>
+                {t.saveKey}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Glass Header */}
       <div style={{ 
@@ -271,10 +344,11 @@ export default function EssayGrader() {
             <span style={{ fontSize: 11, fontWeight: 800, color: "#FF6B6B", marginLeft: 12, letterSpacing: "0.1em", textTransform: "uppercase", background: "rgba(255, 107, 107, 0.1)", padding: "4px 10px", borderRadius: 99 }}>{t.subtitle}</span>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <button onClick={() => setShowSettings(true)} style={{ background: "transparent", border: "none", fontSize: 20, cursor: "pointer", opacity: 0.6, marginRight: 8, transition: "opacity 0.2s" }} title="API Settings">⚙️</button>
           <button className="glass-btn" onClick={() => setLang(lang === "en" ? "tr" : "en")} style={{ padding: "10px 20px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 700, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{lang === "en" ? "EN" : "TR"}</button>
-          <button className="glass-btn" onClick={() => {setEssay(lang === "en" ? SAMPLE_EN : SAMPLE_TR); setResults(null);}} style={{ padding: "10px 24px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{t.loadSample}</button>
-          <button className="glass-btn" onClick={() => {setEssay(""); setResults(null);}} style={{ padding: "10px 24px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{t.clear}</button>
+          <button className="glass-btn" onClick={() => {setEssay(lang === "en" ? SAMPLE_EN : SAMPLE_TR); setResults(null); setErrorText(null);}} style={{ padding: "10px 24px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{t.loadSample}</button>
+          <button className="glass-btn" onClick={() => {setEssay(""); setResults(null); setErrorText(null);}} style={{ padding: "10px 24px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, color: "#4B5563", cursor: "pointer", fontFamily: "'Outfit', sans-serif" }}>{t.clear}</button>
         </div>
       </div>
 
@@ -355,7 +429,13 @@ export default function EssayGrader() {
                 </div>
               )}
 
-              <div style={{ padding: "24px 32px", borderTop: showCriteriaPanel ? "1px solid rgba(0,0,0,0.03)" : "none" }}>
+              {errorText && (
+                <div style={{ padding: "16px 32px", borderTop: showCriteriaPanel ? "1px solid rgba(0,0,0,0.03)" : "none", background: "rgba(254, 242, 242, 0.5)" }}>
+                  <p style={{ color: "#DC2626", margin: 0, fontSize: 14, fontWeight: 600 }}>{errorText}</p>
+                </div>
+              )}
+
+              <div style={{ padding: "24px 32px", borderTop: showCriteriaPanel && !errorText ? "1px solid rgba(0,0,0,0.03)" : "none" }}>
                 <button className="primary-btn" onClick={handleGrade} disabled={!essay.trim() || loading}
                 style={{ 
                   width: "100%", padding: "16px", borderRadius: 16, border: "none", 
@@ -397,7 +477,7 @@ export default function EssayGrader() {
                     <span style={{ fontSize: 20, color: "#9CA3AF", fontWeight: 600 }}>/{totalMax}</span>
                   </div>
                 </div>
-                {t.scores.map((s, i) => <ScoreBar key={i} {...s} />)}
+                {activeScores.map((s, i) => <ScoreBar key={i} {...s} />)}
               </div>
 
               {getCustomResults().length > 0 && (
@@ -422,44 +502,46 @@ export default function EssayGrader() {
                 <p style={{ fontSize: 15, lineHeight: 1.8, color: "#374151", margin: 0 }}>{results.summary}</p>
               </div>
 
-              <div className="glass-card result-card" style={{ background: "rgba(255, 255, 255, 0.8)", backdropFilter: "blur(20px)", borderRadius: 28, padding: "32px", border: "1px solid rgba(255, 255, 255, 0.9)", boxShadow: "0 20px 60px -15px rgba(0,0,0,0.06)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'Outfit', sans-serif" }}>{t.inlineCorrections}</span>
-                  <span style={{ fontSize: 13, color: "#6B7280", fontWeight: 600 }}>{results.corrections.length} {t.issuesFound}</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {results.corrections.map((c, i) => {
-                    const isActive = activeCorrection === i;
-                    const tc = typeColors[c.type] || typeColors.Grammar;
-                    return (
-                      <div key={i} ref={(el) => (correctionRefs.current[i] = el)} onClick={() => setActiveCorrection(isActive ? null : i)}
-                        style={{ 
-                          borderRadius: 16, border: `1px solid ${isActive ? tc.border : "rgba(0,0,0,0.05)"}`, 
-                          background: isActive ? tc.bg + "cc" : "rgba(255,255,255,0.5)", padding: "18px 20px", 
-                          cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                          boxShadow: isActive ? `0 10px 25px -5px ${tc.glow}` : "0 4px 10px rgba(0,0,0,0.02)"
-                        }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-                            <TypeBadge type={c.type} />
-                            <span style={{ fontSize: 14, color: "#1F2937", fontWeight: 600, fontFamily: "'Source Serif 4', Georgia, serif", fontStyle: "italic", lineHeight: 1.5 }}>"{c.line}"</span>
-                          </div>
-                          <span style={{ fontSize: 20, color: "#9CA3AF", transform: isActive ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s" }}>▾</span>
-                        </div>
-                        {isActive && (
-                          <div style={{ animation: "fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards", marginTop: 16 }}>
-                            <p style={{ fontSize: 14, color: "#4B5563", lineHeight: 1.7, margin: "0 0 16px" }}>{c.fix}</p>
-                            <div style={{ background: "rgba(255,255,255,0.7)", border: `1px dashed ${tc.border}66`, borderRadius: 12, padding: "14px 18px" }}>
-                              <span style={{ fontSize: 11, fontWeight: 800, color: tc.text, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 8, fontFamily: "'Outfit', sans-serif" }}>{t.suggestedRevision}</span>
-                              <p style={{ fontSize: 15, color: "#1F2937", margin: 0, lineHeight: 1.7, fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>{c.suggestion}</p>
+              {results.corrections && results.corrections.length > 0 && (
+                <div className="glass-card result-card" style={{ background: "rgba(255, 255, 255, 0.8)", backdropFilter: "blur(20px)", borderRadius: 28, padding: "32px", border: "1px solid rgba(255, 255, 255, 0.9)", boxShadow: "0 20px 60px -15px rgba(0,0,0,0.06)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'Outfit', sans-serif" }}>{t.inlineCorrections}</span>
+                    <span style={{ fontSize: 13, color: "#6B7280", fontWeight: 600 }}>{results.corrections.length} {t.issuesFound}</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {results.corrections.map((c, i) => {
+                      const isActive = activeCorrection === i;
+                      const tc = typeColors[c.type] || typeColors.Grammar;
+                      return (
+                        <div key={i} ref={(el) => (correctionRefs.current[i] = el)} onClick={() => setActiveCorrection(isActive ? null : i)}
+                          style={{ 
+                            borderRadius: 16, border: `1px solid ${isActive ? tc.border : "rgba(0,0,0,0.05)"}`, 
+                            background: isActive ? tc.bg + "cc" : "rgba(255,255,255,0.5)", padding: "18px 20px", 
+                            cursor: "pointer", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            boxShadow: isActive ? `0 10px 25px -5px ${tc.glow}` : "0 4px 10px rgba(0,0,0,0.02)"
+                          }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
+                              <TypeBadge type={c.type} />
+                              <span style={{ fontSize: 14, color: "#1F2937", fontWeight: 600, fontFamily: "'Source Serif 4', Georgia, serif", fontStyle: "italic", lineHeight: 1.5 }}>"{c.line}"</span>
                             </div>
+                            <span style={{ fontSize: 20, color: "#9CA3AF", transform: isActive ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s" }}>▾</span>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          {isActive && (
+                            <div style={{ animation: "fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards", marginTop: 16 }}>
+                              <p style={{ fontSize: 14, color: "#4B5563", lineHeight: 1.7, margin: "0 0 16px" }}>{c.fix}</p>
+                              <div style={{ background: "rgba(255,255,255,0.7)", border: `1px dashed ${tc.border}66`, borderRadius: 12, padding: "14px 18px" }}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: tc.text, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 8, fontFamily: "'Outfit', sans-serif" }}>{t.suggestedRevision}</span>
+                                <p style={{ fontSize: 15, color: "#1F2937", margin: 0, lineHeight: 1.7, fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}>{c.suggestion}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
           )}
