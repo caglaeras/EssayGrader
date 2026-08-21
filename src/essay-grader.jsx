@@ -4,7 +4,7 @@ import logoImg from './assets/logo.svg';
 // ── i18n ──
 const i18n = {
   en: {
-    title: "Essay Grader", subtitle: "by Madlen", loadSample: "Load Sample", clear: "Clear",
+    title: "Essay Grader", loadSample: "Load Sample", clear: "Clear",
     studentEssay: "Student Essay", words: "words",
     placeholder: "Paste the student's essay here...",
     gradeBtn: "Grade Essay", analyzing: "Sanatsal zekayla analiz ediliyor...", // Actually wait, analyzing: "Analyzing essay..."
@@ -29,7 +29,7 @@ const i18n = {
     ],
   },
   tr: {
-    title: "Kompozisyon Değerlendirici", subtitle: "Madlen", loadSample: "Örnek Yükle", clear: "Temizle",
+    title: "Kompozisyon Değerlendirici", loadSample: "Örnek Yükle", clear: "Temizle",
     studentEssay: "Öğrenci Kompozisyonu", words: "kelime",
     placeholder: "Öğrencinin kompozisyonunu buraya yapıştırın...",
     gradeBtn: "Değerlendir", analyzing: "Yapay zeka değerlendiriyor...",
@@ -337,12 +337,11 @@ ${essay}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <img 
             src={logoImg} 
-            alt="Madlen Logo" 
+            alt="Essay Grader logo" 
             style={{ width: 46, height: 46, borderRadius: 14, objectFit: "cover", boxShadow: "0 6px 16px rgba(211, 140, 63, 0.25)" }} 
           />
           <div>
             <span style={{ fontFamily: "'Instrument Serif', serif", fontSize: 28, fontWeight: 400, color: "#1F2937" }}>{t.title}</span>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#FF6B6B", marginLeft: 12, letterSpacing: "0.1em", textTransform: "uppercase", background: "rgba(255, 107, 107, 0.1)", padding: "4px 10px", borderRadius: 99 }}>{t.subtitle}</span>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
